@@ -3,8 +3,8 @@ Contributors: loueranta
 Donate link: https://www.paytrail.com/
 Tags: woocommerce
 Requires at least: 4.9
-Tested up to: 6.4
-Stable tag: 1.3.11
+Tested up to: 6.7
+Stable tag: 2.4.1
 Requires PHP: 7.3
 License: MIT
 License URI: https://opensource.org/licenses/MIT
@@ -13,19 +13,19 @@ Paytrail is a payment gateway that offers 20+ payment methods for Finnish custom
 
 == Description ==
 
-Accept all popular payment methods for Finnish B2C and B2B customers with one agreement and one plugin. 
+Accept all popular payment methods for Finnish B2C and B2B customers with one agreement and one plugin.
 
 [Paytrail](https://www.paytrail.com) provides you with:
 
 * **A trusted and popular Finnish payment service with 17 years of e-commerce experience** that is supported all over Finland and many European countries. 20 000+ online businesses and services including the Finnish State Treasury ‘s Suomi.fi payment service entrust us to handle their transactions.
 * **Popular payment methods in Finland to increase conversion rates:** online banks, cards, mobile, Buy now, Pay later and PayPal. Detailed payment method information can be found on [our website](https://www.paytrail.com/en/payment-methods).
 * **Tokenization and Subscriptions.** The plugin supports card tokenization which allows customers to store their credit card information securely and reliably for later use or with the use of [WooCommerce Subscriptions](https://woocommerce.com/products/woocommerce-subscriptions/) for recurring payments.
-* **Fast, reliable payouts** that are made at the same time regardless of payment method used. 
+* **Fast, reliable payouts** that are made at the same time regardless of payment method used.
 * **Accessible, friendly, and fast customer service.** Our customer service team replies to all requests from our customers and our customers’ customers.
 * **Reliable and compliant service** with an [uptime of 99.98%](https://status.paytrail.com/). Local and EU regulatory requirements and updates are always made on time.
 * **Easy monitoring and detailed reporting.** Track and analyze transactions, create refunds and payment links, and download detailed reports for accounting purposes.
 
-To use this plugin, first [register for a Paytrail account](https://www.paytrail.com/en/order-service). 
+To use this plugin, first [register for a Paytrail account](https://www.paytrail.com/en/order-service).
 
 For pricing, please [visit our website](https://www.paytrail.com/en/pricing).
 
@@ -55,6 +55,58 @@ Test credentials:
 With test credentials, you can test most of the payment methods included in Paytrail’s payment service. You can find the payment method specific credentials needed for testing in Paytrail’s [documentation](https://docs.paytrail.com/#/payment-method-providers).
 
 == Changelog ==
+
+= 2.4.1 =
+- Added stamp for rounding row item
+- Fixed payment status after failed payment
+
+= 2.4.0 =
+- Added possibility to display OP Lasku calculator in the product and cart page
+- Fixed click listener on shortcode checkout
+
+= 2.3.0 =
+- Added Apple Pay support for payment page bypass
+- Added supported currency notice
+
+= 2.2.3 =
+- Added gateway check for blocks checkout
+
+= 2.2.2 =
+- Fixed refund query
+
+= 2.2.1 =
+- Fixed subscription/saved card deletion
+
+= 2.2.0 =
+- Added checkout blocks support
+
+= 2.1.2 =
+- Added more validation for transactions in payment response
+
+= 2.1.1 =
+- Fixed VAT rounding problem caused by certain product price settings
+
+= 2.1.0 =
+- Added support for decimal values in tax rate
+- Added Finnish bank reference option
+- Allow selection of HTML tags in the payment description view
+- Minor fixes
+
+= 2.0.3 =
+- Fixed test mode enablement
+
+= 2.0.2 =
+- Fixed test mode settings
+
+= 2.0.1 =
+- Removed option to generate Finnish bank reference numbers for transactions
+
+= 2.0.0 =
+- Added WooCommerce HPOS support
+- Added new customer on-boarding flow
+- Added option to generate Finnish bank reference numbers for transactions
+- Improve error logging
+- Change the Cancel URL to be the 'Pay for Order' page
 
 = 1.3.11 =
 - Fixed tax calculations
@@ -148,10 +200,10 @@ With test credentials, you can test most of the payment methods included in Payt
 * Added wordpress.org assets
 
 = 1.0.2 =
-* Added even more escapes to variables and options 
+* Added even more escapes to variables and options
 
 = 1.0.1 =
-* Added more escapes to variables and options 
+* Added more escapes to variables and options
 * Renamed some CSS classes to improve compatibility with the old Checkout Finland for WooCommerce plugin
 
 = 1.0.0 =

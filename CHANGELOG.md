@@ -4,6 +4,76 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.1] - 2025-02-25
+### Added
+- Added stamp for rounding row item
+- ### Fixed
+- Fixed payment status after failed payment
+
+## [2.4.0] - 2025-02-10
+### Added
+- Added possibility to display OP Lasku calculator in product and cart page
+- ### Fixed
+- Fixed click listener on shortcode checkout
+
+## [2.3.0] - 2025-01-22
+### Added
+- Added Apple Pay support for payment page bypass
+- Added supported currency notice
+
+## [2.2.3] - 2024-12-19
+### Added
+- Added gateway check for blocks checkout
+
+## [2.2.2] - 2024-12-17
+### Fixed
+- Fixed refund query
+
+## [2.2.1] - 2024-12-09
+### Fixed
+- Fixed subscription/saved card deletion
+
+## [2.2.0] - 2024-12-02
+### Added
+- Added checkout blocks support
+
+## [2.1.2] - 2024-11-06
+### Added
+- Added more validation for transactions in payment response
+
+## [2.1.1] - 2024-08-05
+### Fixed
+- Fixed VAT rounding problem caused by certain product price settings
+
+## [2.1.0] - 2024-08-01
+### Added
+- Added support for decimal values in tax rate
+- Added Finnish bank reference option
+- Allow selection of HTML tags in the payment description view
+### Fixed
+- Minor fixes
+
+## [2.0.3] - 2024-05-02
+### Fixed
+- Fixed test mode enablement
+
+## [2.0.2] - 2024-04-18
+### Fixed
+- Fixed test mode settings
+
+## [2.0.1] - 2024-04-18
+### Removed
+- Removed option to generate Finnish bank reference numbers for transactions
+
+## [2.0.0] - 2024-04-17
+### Added
+- Added [WooCommerce HPOS](https://woocommerce.com/document/high-performance-order-storage/) support
+- Added new customer on-boarding flow
+- Added option to generate Finnish bank reference numbers for transactions
+### Fixed
+- Improved error logging
+- Changed the Cancel URL to be the 'Pay for Order' page
+
 ## [1.3.11] - 2023-12-21
 ### Fixed
 - Fixed tax calculations
@@ -135,11 +205,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.0.2] - 2021-11-03
 ### Added
-- Added even more escapes to variables and options 
+- Added even more escapes to variables and options
 
 ## [1.0.1] - 2021-11-02
 ### Changed
-- Added more escapes to variables and options 
+- Added more escapes to variables and options
 - Renamed some CSS classes to improve compatibility with the old Checkout Finland for WooCommerce plugin
 
 ## [1.0.0] - 2021-10-20

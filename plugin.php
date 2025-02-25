@@ -3,12 +3,13 @@
  * Plugin Name: Paytrail for WooCommerce
  * Plugin URI: https://github.com/paytrail/paytrail-for-woocommerce
  * Description: Paytrail is a payment gateway that offers 20+ payment methods for Finnish customers.
- * Version: 1.3.11
+ * Version: 2.4.1
  * Requires at least: 4.9
- * Tested up to: 6.4
+ * Requires Plugins: woocommerce
+ * Tested up to: 6.7
  * Requires PHP: 7.3
  * WC requires at least: 3.5
- * WC tested up to: 8.2
+ * WC tested up to: 9.6
  * Author: Paytrail
  * Author URI: https://www.paytrail.com/
  * Text Domain: paytrail-for-woocommerce
@@ -139,16 +140,23 @@ final class Plugin {
         add_action( 'wp_enqueue_scripts', function() {
             wp_enqueue_style( 'dashicons' );
         } );
-        
+
         add_action( 'before_woocommerce_init', function() {
             if ( class_exists( \Automattic\WooCommerce\Utilities\FeaturesUtil::class ) ) {
                 \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'custom_order_tables', __FILE__, true );
+                \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'cart_checkout_blocks',__FILE__, true );
             }
         } );
 
+        // Blocks compatibility
+		add_action( 'woocommerce_blocks_loaded', [__CLASS__,'register_blocks_support'] );
+        
         // Enqueue jQuery
         add_action('admin_enqueue_scripts', array($this, 'enqueue_jquery'));
         add_action('admin_enqueue_scripts', array($this, 'enque_jquery_scripts'));
+
+        //Add OP Lasku calculator to the product and cart page
+        add_action('woocommerce_init', array($this, 'op_lasku_init'));
     }
 
     /**
@@ -159,16 +167,16 @@ final class Plugin {
         $plugin_instance = Plugin::instance();
 		$plugin_dir_url = $plugin_instance->get_plugin_dir_url();
 		$plugin_version = $plugin_instance->get_plugin_info()['Version'];
-    
+
         // Register the custom script
         wp_register_script(
             'introScripts',
-            $plugin_dir_url . 'assets/dist/introScripts.js',
+            $plugin_dir_url . 'dist/assets/frontend/intro-scripts.js',
             ['jquery'], // Dependency on jQuery
             $plugin_version,
             true // Enqueue in the footer
         );
-    
+
         // Enqueue the custom script
         wp_enqueue_script('introScripts');
     }
@@ -217,7 +225,7 @@ final class Plugin {
                     background-color: <?php echo get_theme_mod('paytrail_group_highlighted_background', '#33798d'); ?> !important;
                     color: <?php echo get_theme_mod('paytrail_group_highlighted_text', '#ffffff'); ?> !important;
                 }
-                .woocommerce-checkout #payment .paytrail-woocommerce-payment-fields--list-item--input:checked+.paytrail-woocommerce-payment-fields--list-item--wrapper, .woocommerce-checkout #payment .paytrail-woocommerce-payment-fields--list-item:hover .paytrail-woocommerce-payment-fields--list-item--wrapper {                    
+                .woocommerce-checkout #payment .paytrail-woocommerce-payment-fields--list-item--input:checked+.paytrail-woocommerce-payment-fields--list-item--wrapper, .woocommerce-checkout #payment .paytrail-woocommerce-payment-fields--list-item:hover .paytrail-woocommerce-payment-fields--list-item--wrapper {
                     border: 2px solid <?php esc_html_e( get_theme_mod('paytrail_method_highlighted', '#33798d')); ?> !important;
                 }
                 .woocommerce-checkout #payment ul.payment_methods li.paytrail-woocommerce-payment-fields--list-item .paytrail-woocommerce-payment-fields--list-item--wrapper:hover {
@@ -343,6 +351,7 @@ final class Plugin {
 
                 return $gateways;
             });
+
         }
 
         return self::$instance;
@@ -430,6 +439,22 @@ final class Plugin {
     }
 
     /**
+	 * Register blocks support
+	 */
+	public static function register_blocks_support() {
+		if ( class_exists( 'Automattic\WooCommerce\Blocks\Payments\Integrations\AbstractPaymentMethodType' ) && class_exists( 'Automattic\WooCommerce\Blocks\Payments\PaymentMethodRegistry' ) ) {
+			require_once 'src/PaytrailBlocks.php';
+
+			add_action(
+				'woocommerce_blocks_payment_method_type_registration',
+				function( \Automattic\WooCommerce\Blocks\Payments\PaymentMethodRegistry $payment_method_registry ) {
+				$payment_method_registry->register( new Paytrail_Blocks_Support() );
+				}
+			);
+		}
+	}
+
+    /**
      * Ensure that we have at least version 3.5 of the WooCommerce plugin.
      *
      * @return string|null
@@ -470,6 +495,35 @@ final class Plugin {
      */
     public function get_plugin_info() : array {
         return $this->plugin_info;
+    }
+
+    /**
+	 * Plugin url.
+	 *
+	 * @return string
+	 */
+	public static function plugin_url() {
+		return untrailingslashit( plugins_url( '/', __FILE__ ) );
+	}
+
+	/**
+	 * Plugin url.
+	 *
+	 * @return string
+	 */
+	public static function plugin_abspath() {
+		return trailingslashit( plugin_dir_path( __FILE__ ) );
+	}
+
+    /**
+     * Initialize OP Lasku calculator for product and cart page
+     */
+    public function op_lasku_init() {
+        $settings = get_option('woocommerce_paytrail_settings');
+        
+        if(isset($settings['op_lasku_calculator']) && 'yes' === $settings['op_lasku_calculator']) {
+           new \Paytrail\WooCommercePaymentGateway\Providers\OPLasku();
+        }
     }
 }
 
