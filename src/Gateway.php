@@ -15,6 +15,7 @@ use Paytrail\SDK\Request\PaymentRequest;
 use Paytrail\SDK\Model\Customer;
 use Paytrail\SDK\Model\Address;
 use Paytrail\SDK\Model\Item;
+use Paytrail\SDK\Model\RefundItem;
 use Paytrail\SDK\Model\CallbackUrl;
 use Paytrail\SDK\Exception\HmacException;
 use Paytrail\SDK\Request\RefundRequest;
@@ -822,6 +823,7 @@ final class Gateway extends \WC_Payment_Gateway {
 		$pay_for_order    = filter_input(INPUT_GET, 'pay_for_order');
 		$payment_method = filter_input(INPUT_POST, 'payment_method');
 
+
 		if (!$status && !$reference && !$refund_callback && !$refund_unique_id) {
 			//no log to reduce number of log entries
 			return;
@@ -1053,7 +1055,7 @@ final class Gateway extends \WC_Payment_Gateway {
 				}
 				$order->update_status('failed');
 				$failed_order_note = __('Payment failed.', 'paytrail-for-woocommerce');
-				
+
 				$latest_order_note = wc_get_order_notes([
 					'order_id' => $order->get_id(),
 					'limit'    => 1,
@@ -1337,6 +1339,8 @@ final class Gateway extends \WC_Payment_Gateway {
 
 		$this->set_base_payment_data($payment, $order);
 
+		$this->set_order_item_stamp($payment, $order);
+
 		$this->log('Paytrail: process_payment, order update_meta_data', 'debug');
 		// Save the reference for possible later use.
 		$order->update_meta_data('_checkout_reference', $payment->getReference());
@@ -1349,8 +1353,10 @@ final class Gateway extends \WC_Payment_Gateway {
 		// Create a payment via Paytrail SDK
 		try {
 			if ($is_token_payment) {
+
 				return $this->create_cit_payment($payment, $order);
 			} else {
+
 				return $this->create_normal_payment($payment, $order, $payment_provider);
 			}
 		} catch (ValidationException $exception) {
@@ -1394,6 +1400,7 @@ final class Gateway extends \WC_Payment_Gateway {
 			// Log the payment request if debug log is enabled.
 			$this->log('Paytrail\SDK\Request\PaymentRequest: ' . json_encode($payment), 'info');
 			$response = $this->client->createPayment($payment);
+
 		} catch (\Exception $exception) {
 			// Log the error message if debug log is enabled.
 			$this->log($exception->getMessage() . $exception->getTraceAsString(), 'error');
@@ -1486,6 +1493,7 @@ final class Gateway extends \WC_Payment_Gateway {
 		$this->log('Paytrail: create_cit_payment', 'debug');
 
 		try {
+
 			$response = $this->client->createCitPaymentCharge($payment);
 
 			// Log the payment request if debug log is enabled.
@@ -1529,6 +1537,8 @@ final class Gateway extends \WC_Payment_Gateway {
 		}
 
 		$redirect_url = !empty($response->getThreeDSecureUrl()) ? $response->getThreeDSecureUrl() : $this->get_return_url($order);
+
+
 
 		return [
 			'result'   => 'success',
@@ -1580,6 +1590,27 @@ final class Gateway extends \WC_Payment_Gateway {
 		$order->payment_complete($response->getTransactionId());
 
 		return true;
+	}
+
+
+	public function set_order_item_stamp( $payment, $order) {
+		$items = $payment->getItems();
+		$item_meta_data = array();
+
+		foreach ($items as $key => $item) {
+			$sku = $item->getProductcode();
+			$stamp = $item->getStamp();
+			$product_id = wc_get_product_id_by_sku( $sku );
+
+			$item_meta_data[] = array(
+			  'product_id' => $product_id,
+			  'stamp' => $stamp
+			);
+		}
+
+		$item_meta_data = json_encode($item_meta_data, true);
+
+		add_post_meta($order->get_id(), 'order_item_stamps', $item_meta_data);
 	}
 
 	/**
@@ -1890,6 +1921,8 @@ final class Gateway extends \WC_Payment_Gateway {
 
 			$transaction_id = $order->get_transaction_id();
 
+			$order_refunds = $order->get_refunds();
+
 			$order->add_order_note(
 				sprintf(
 					// Translators: placeholder is the optional reason for the refund.
@@ -1898,15 +1931,23 @@ final class Gateway extends \WC_Payment_Gateway {
 				)
 			);
 
+
 			// Do some additional stuff after the refund object has been created
 			add_action(
 				'woocommerce_order_refunded',
 				function ( $order_id, $refund_id) use ( $order, $refund, $reason, $transaction_id, $amount, $price, $refund_unique_id) {
 					$refund_object = wc_get_order($refund_id);
 
+					$refunded_items = $refund_object->get_items();
+
+					$itemList = $this->getOnlyRefundItem($refunded_items, $order);
+
+					$refund->setItems(array_filter($itemList));
+
 					try {
-						$this->client->refund($refund, $transaction_id);
+					 $this->client->refund($refund, $transaction_id);
 					} catch (\Exception $e) {
+
 						switch ($e->getCode()) {
 							case 422:
 								// An email refund request is needed
@@ -2239,6 +2280,7 @@ final class Gateway extends \WC_Payment_Gateway {
 		return $item;
 	}
 
+
 	/**
 	 * Get an order item product code text.
 	 *
@@ -2530,4 +2572,61 @@ final class Gateway extends \WC_Payment_Gateway {
 
 		$this->error($exception, $message, $die);
 	}
+
+	protected function create_refund_item( WC_Order_Item $order_item, WC_Order $order) {
+		$item = new RefundItem();
+
+		// Get the item total with taxes and without rounding.
+		// Then convert it into the integer format required by Paytrail.
+		$sub_total = $this->helper->handle_currency($order->get_item_total($order_item, true, false));
+		$item->setAmount($sub_total);
+
+		$item->setStamp((string) $order_item->get_id());
+
+		return $item;
+	}
+
+
+
+
+	protected function getOnlyRefundItem( $products, $order) {
+
+
+		   $Items = array();
+
+		   $itemstamps = array();
+
+		   $order_metadata = $order->get_meta('order_item_stamps');
+
+		   $order_metadata = json_decode($order_metadata, true);
+
+		foreach ($order_metadata as $order_meta_key => $order_meta_value) {
+			 $itemstamps[$order_meta_value['product_id']] = $order_meta_value['stamp'];
+		}
+
+		foreach ($products as $key => $value) {
+
+			  $itemID = $value->get_product_id();
+
+			  $amt = abs($this->helper->handle_currency($value->get_subtotal()));
+
+			  $stamp = $itemstamps[$itemID];
+
+			  $RefundItems = new RefundItem();
+
+			  $RefundItems->setAmount($amt);
+			  $RefundItems->setStamp($stamp);
+
+			  $Items[] = $RefundItems;
+
+		}
+
+			return $Items;
+
+
+	}
+
+
+
+
 }
